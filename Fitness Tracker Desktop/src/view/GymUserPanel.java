@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.ScrollPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 import java.util.TreeMap;
@@ -26,7 +27,7 @@ public class GymUserPanel extends Observable {
 	
 	public GymUserPanel() {
 		myPanel = new JPanel();
-		buttons = new TreeMap<>();
+		buttons = new HashMap<>();
 		myWorkoutPanel = new JPanel();
 		setUp();
 	}
@@ -62,15 +63,23 @@ public class GymUserPanel extends Observable {
 		northPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 		northPanel.setBackground(Color.WHITE);
 		myPanel.add(northPanel, BorderLayout.NORTH);
-		centerPanel.add(viewWorkouts);
-		for (JButton current : buttons.values()) {
-			centerPanel.add(current);
-		}
+		
+//		centerPanel.add(viewWorkouts);
+		centerPanel.add(sunday);
+		centerPanel.add(monday);
+		centerPanel.add(tuesday);
+		centerPanel.add(wednesday);
+		centerPanel.add(thursday);
+		centerPanel.add(friday);
+		centerPanel.add(saturday);
+
 		final JPanel scrollPanel = getScrollPanel();
 		northPanel.add(viewSupplements);
 		northPanel.add(logout);
+		northPanel.add(viewWorkouts);
 		northPanel.setMaximumSize(new Dimension(600, (int) northPanel.getMinimumSize().getHeight()));
 		centerPanel.setMaximumSize(new Dimension(600, (int) centerPanel.getMinimumSize().getHeight()));
+//		centerPanel.setPreferredSize(new Dimension(600, (int) centerPanel.getMinimumSize().getHeight() * 2));
 		myPanel.add(Box.createVerticalStrut(10));
 		myPanel.add(centerPanel, BorderLayout.CENTER);
 		myPanel.add(Box.createVerticalStrut(10));
