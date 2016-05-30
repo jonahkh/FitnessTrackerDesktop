@@ -3,24 +3,17 @@ package view;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
-import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Observable;
 import java.util.Observer;
 
-import javax.swing.BoxLayout;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
 
 public class GUI extends JFrame implements Observer {
 	
@@ -29,7 +22,7 @@ public class GUI extends JFrame implements Observer {
 			"http://cssgate.insttech.washington.edu/~jonahkh/445phpscript.php?";
 	
 	/** The currently logged in email. */
-	protected static String EMAIL = null;
+	protected static String EMAIL = "jonahkh@uw.edu";
 	/** Represents the login page card. */
 	public static final String LOGIN = "LOGIN";
 	
@@ -41,6 +34,7 @@ public class GUI extends JFrame implements Observer {
 	
 	/** Represents the gym user page card. */
 	public static final String USER = "USER";
+	
 	
 	/** The login page. */
 	private final JPanel myLoginPanel;

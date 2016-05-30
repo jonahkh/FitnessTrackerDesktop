@@ -29,4 +29,8 @@ public class WeightWorkout {
 	public String getName() {
 		return name;
 	}
+	
+	public boolean hasWorkout() {
+		return !exercises.isEmpty();
+	}
 }
