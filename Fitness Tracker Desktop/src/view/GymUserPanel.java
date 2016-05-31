@@ -47,6 +47,8 @@ public class GymUserPanel extends Observable {
 	private JButton exercise4;
 	private WeightWorkout workout = null;
 	private JLabel currentWorkout;
+	private JButton addCardioWorkout;
+	private JButton finish;
 
 	
 	public GymUserPanel() {
@@ -113,76 +115,81 @@ public class GymUserPanel extends Observable {
 		setListeners(logout, scrollPaneSupplements);
 	}
 	
+	
+	private void cardioWorkout() {
+		enableButtons(false);
+		JPanel panel = new JPanel();
+		JPanel intensityPanel = new JPanel();
+		JPanel durationPanel = new JPanel();
+		JLabel intensity = new JLabel("Intensity: ");
+		JLabel duration = new JLabel("Duration (minutes): "); 
+		
+		JComboBox<String> intensityOptions = new JComboBox<String>();
+		JComboBox<Integer> durationOptions = new JComboBox<Integer>();
+		
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		for (int i = 1; i <= 120; i++) {
+			durationOptions.addItem(i);
+		}
+		intensityOptions.addItem("easy");
+		intensityOptions.addItem("medium");
+		intensityOptions.addItem("hard");
+		intensityPanel.add(intensity);
+		intensityPanel.add(intensityOptions);
+		durationPanel.add(duration);
+		durationPanel.add(durationOptions);
+		panel.add(intensityPanel);
+		panel.add(durationPanel);
+		if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, panel, 
+				"Enter your cardio workout information", 
+				JOptionPane.OK_CANCEL_OPTION)) {
+			int num = getWorkoutNumber();
+			String url = ADD_CARDIO + "&email=" + GUI.EMAIL + "&num=" + num 
+					+ "&dur=" + durationOptions.getSelectedItem()
+					+ "&int=" + intensityOptions.getSelectedItem();
+			System.out.println(url);
+//			System.out.println(GUI.webConnect(url));
+		}
+	}
+	
 	private void enableButtons(boolean bool) {
 		exercise1.setEnabled(bool);
 		exercise2.setEnabled(bool);
 		exercise3.setEnabled(bool);
 		exercise4.setEnabled(bool);
-	}
-	
-	
+		addCardioWorkout.setEnabled(!bool);
+		finish.setEnabled(bool);
+	}	
+		
 	private void addComboBoxListener() {
 		myDays.addItemListener(new ItemListener() {
 
 			@Override
 			public void itemStateChanged(ItemEvent event) {
-				String item = event.getItem().toString();
-				String result = GUI.webConnect(GUI.URL + VIEW_WORKOUTS_URL + item);
-				if (result.contains("WorkoutDescription")) {
-					enableButtons(false);
-					JPanel panel = new JPanel();
-					JPanel intensityPanel = new JPanel();
-					JPanel durationPanel = new JPanel();
-					JLabel intensity = new JLabel("Intensity: ");
-					JLabel duration = new JLabel("Duration (minutes): "); 
-					
-					JComboBox<String> intensityOptions = new JComboBox<String>();
-					JComboBox<Integer> durationOptions = new JComboBox<Integer>();
-					
-					panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-					for (int i = 1; i <= 120; i++) {
-						durationOptions.addItem(i);
+				try {
+					String item = event.getItem().toString();
+					String result = GUI.webConnect(GUI.URL + VIEW_WORKOUTS_URL + item);
+					JSONArray arr = new JSONArray(result);
+					JSONObject obj0 = arr.getJSONObject(0);
+					String name = obj0.getString("WorkoutName");
+					currentWorkout.setText("Current Workout: " + name);
+					if (result.contains("WorkoutDescription")) {
+						enableButtons(false);
+					} else {
+							enableButtons(true);
+		                    JSONObject obj1 = arr.getJSONObject(1);
+		                    JSONObject obj2 = arr.getJSONObject(2);
+		                    JSONObject obj3 = arr.getJSONObject(3);
+		
+			                workout = new WeightWorkout(name);
+			                exercise1.setText(obj0.getString("Exercise"));
+			                exercise2.setText(obj1.getString("Exercise"));
+			                exercise3.setText(obj2.getString("Exercise"));
+			                exercise4.setText(obj3.getString("Exercise"));
 					}
-					intensityOptions.addItem("easy");
-					intensityOptions.addItem("medium");
-					intensityOptions.addItem("hard");
-					intensityPanel.add(intensity);
-					intensityPanel.add(intensityOptions);
-					durationPanel.add(duration);
-					durationPanel.add(durationOptions);
-					panel.add(intensityPanel);
-					panel.add(durationPanel);
-					if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, panel, 
-							"Enter your cardio workout information", 
-							JOptionPane.OK_CANCEL_OPTION)) {
-						int num = getWorkoutNumber();
-						String url = ADD_CARDIO + "&email=" + GUI.EMAIL + "num=" + num 
-								+ "&dur=" + durationOptions.getSelectedItem()
-								+ "&int=" + intensityOptions.getSelectedItem();
-					}
-
-					
-				} else {
-					try {
-						enableButtons(true);
-						JSONArray arr = new JSONArray(result);
-	                    JSONObject obj0 = arr.getJSONObject(0);
-	                    JSONObject obj1 = arr.getJSONObject(1);
-	                    JSONObject obj2 = arr.getJSONObject(2);
-	                    JSONObject obj3 = arr.getJSONObject(3);
-	
-		                String name = obj0.getString("WorkoutName");
-		                currentWorkout.setText("Current Workout: " + name);
-		                workout = new WeightWorkout(name);
-		                exercise1.setText(obj0.getString("Exercise"));
-		                exercise2.setText(obj1.getString("Exercise"));
-		                exercise3.setText(obj2.getString("Exercise"));
-		                exercise4.setText(obj3.getString("Exercise"));
-		            } catch (JSONException e) {
-		            	e.printStackTrace();
-		            }
+	            } catch (JSONException e) {
+	            	e.printStackTrace();
 	            }
-				
 			}
 			
 		});
@@ -285,7 +292,8 @@ public class GymUserPanel extends Observable {
 		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 		JPanel bottom = new JPanel();
 		bottom.setBackground(Color.WHITE);
-		JButton finish = new JButton("Finish");
+		finish = new JButton("Finish");
+		addCardioWorkout = new JButton("Log Cardio Workout");
 		finish.addActionListener(new ActionListener() {
 
 			@Override
@@ -310,7 +318,16 @@ public class GymUserPanel extends Observable {
 			}
 			
 		});
+		addCardioWorkout.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				cardioWorkout();
+			}
+			
+		});
 		bottom.add(finish);
+		bottom.add(addCardioWorkout);
 		panel.add(bottom);
 		return panel;
 	}
