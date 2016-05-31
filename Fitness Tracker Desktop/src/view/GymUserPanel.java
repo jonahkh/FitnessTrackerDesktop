@@ -35,7 +35,7 @@ public class GymUserPanel extends Observable {
 	public static final String VIEW_WORKOUTS_URL = "cmd=viewworkouts&day=";
 	public static final String ADD_SET = GUI.URL + "cmd=addset";
 	public static final String ADD_WORKOUT = GUI.URL + "cmd=logworkout";
-	public static final String ADD_CARDIO = GUI.URL + "cmd=cardio";
+	public static final String ADD_CARDIO = GUI.URL + "cmd=cardiosession";
 	private final JPanel myPanel;
 	private final Map<String, JButton> buttons;
 	private JPanel myWorkoutPanel;
@@ -148,6 +148,7 @@ public class GymUserPanel extends Observable {
 					+ "&dur=" + durationOptions.getSelectedItem()
 					+ "&int=" + intensityOptions.getSelectedItem();
 			System.out.println(url);
+			
 //			System.out.println(GUI.webConnect(url));
 		}
 	}

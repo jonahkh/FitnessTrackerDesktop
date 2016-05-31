@@ -173,7 +173,16 @@ try {
             echo json_encode($result);
             break;
         case "cardiosession": 
-    	break;    
+        	$email = isset($_GET['email']) ? $_GET['email'] : '';
+            $num = isset($_GET['num']) ? $_GET['num'] : '';
+            $dur = isset($_GET['dur']) ? $_GET['dur'] : '';
+            $int= isset($_GET['int']) ? $_GET['int'] : '';
+            $sql = "INSERT INTO CardioSession VALUES ('$email', '$num', '$dur', '$int')";
+			$q = $db->prepare($sql);
+            $q->execute();
+            $result = $q->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode($result);
+    		break;    
     
     }
 
