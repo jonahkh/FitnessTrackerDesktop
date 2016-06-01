@@ -165,7 +165,8 @@ public class RegisterPanel extends Observable {
 					error = false;
 				}
 				if (error) {
-					url += "cmd=register&email=" + email + "&first=" + first + "&last=" + last 
+					url += "cmd=register&email=" + email + "&first=" + first.replaceAll(" ", "_") 
+					+ "&last=" + last.replaceAll(" ", "_") 
 							+ "&gender=" + gender + "&days=" + days + "&weight=" + weight;
 					String result = GUI.webConnect(url);
 					if (result.contains("success")) {

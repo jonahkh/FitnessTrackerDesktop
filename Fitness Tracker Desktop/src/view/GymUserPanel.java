@@ -2,43 +2,62 @@ package view;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.ScrollPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.TreeMap;
 
+import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 
 public class GymUserPanel extends Observable {
 	public static final String VIEW_WORKOUTS_URL = "cmd=viewworkouts&day=";
 	public static final String ADD_SET = GUI.URL + "cmd=addset";
 	public static final String ADD_WORKOUT = GUI.URL + "cmd=logworkout";
 	public static final String ADD_CARDIO = GUI.URL + "cmd=cardiosession";
+	public static final String VIEW_SUPPS = GUI.URL + "cmd=viewsupplements";
+	public static final String RATE_SUPP = GUI.URL + "cmd=ratesupplements";
+	public static final String RATE_WORKOUT = GUI.URL + "cmd=rateworkout";
+	public static final String VIEW_LOGGED_WORKOUTS = GUI.URL + "cmd=viewloggedworkout" 
+												+ "&email=" + GUI.EMAIL;
 	private final JPanel myPanel;
 	private final Map<String, JButton> buttons;
 	private JPanel myWorkoutPanel;
+	private JPanel mySupplementPanel;
 	private JComboBox<String> myDays;
 	private JScrollPane scrollPane;
 	private JButton exercise1;
@@ -49,13 +68,17 @@ public class GymUserPanel extends Observable {
 	private JLabel currentWorkout;
 	private JButton addCardioWorkout;
 	private JButton finish;
+	private String cardioName = "";
+	private Map<JButton, String> loggedWorkouts;
 
 	
 	public GymUserPanel() {
 		myPanel = new JPanel();
 		buttons = new HashMap<>();
 		myWorkoutPanel = new JPanel();
+		mySupplementPanel = new JPanel();
 		currentWorkout = new JLabel("Current Workout: ");
+		loggedWorkouts = new HashMap<JButton, String>();
 		myDays = new JComboBox<String>();
 		setUp();
 		myDays.setSelectedIndex(1);
@@ -64,6 +87,8 @@ public class GymUserPanel extends Observable {
 	private void setUp() {
 		myPanel.setBackground(Color.WHITE);
 		myPanel.setLayout(new BoxLayout(myPanel, BoxLayout.Y_AXIS));
+		final JPanel supplementPanel = setUpSupplementPanel();
+		final JButton viewWorkoutsButton = new JButton("View Workouts");
 		final JButton scrollPaneSupplements = new JButton("View Supplements");
 		final JLabel scrollPaneWorkouts = new JLabel("View Daily Workouts");
 		final JButton logout = new JButton("Logout");
@@ -103,6 +128,7 @@ public class GymUserPanel extends Observable {
 		centerPanel.add(myDays);
 		centerPanel.add(currentWorkout);
 		myWorkoutPanel = getScrollPanel();
+		northPanel.add(viewWorkoutsButton);
 		northPanel.add(scrollPaneSupplements);
 		northPanel.add(logout);
 		northPanel.setMaximumSize(new Dimension(600, (int) northPanel.getMinimumSize().getHeight()));
@@ -111,8 +137,125 @@ public class GymUserPanel extends Observable {
 		myPanel.add(centerPanel, BorderLayout.CENTER);
 		myPanel.add(Box.createVerticalStrut(10));
 		myPanel.add(myWorkoutPanel);
-//		myPanel.remove(scrollPanel);
 		setListeners(logout, scrollPaneSupplements);
+		viewWorkoutsButton.setEnabled(false);
+		viewWorkoutsButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				myPanel.remove(supplementPanel);
+				myPanel.add(myWorkoutPanel);
+				viewWorkoutsButton.setEnabled(false);
+				scrollPaneSupplements.setEnabled(true);
+				myPanel.revalidate();
+				myPanel.repaint();
+			}
+		});
+		scrollPaneSupplements.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				myPanel.remove(myWorkoutPanel);
+				myPanel.add(supplementPanel);
+				viewWorkoutsButton.setEnabled(true);
+				scrollPaneSupplements.setEnabled(false);
+				myPanel.repaint();
+				myPanel.revalidate();
+			}
+		});
+	}
+	
+	private JPanel setUpSupplementPanel() {
+		final JPanel panel = new JPanel();
+
+		panel.setBackground(Color.WHITE);
+		try {
+			String[] header = new String[] {"Name", "Price", "Fat", "Carbs", "Protein", 
+					"Calories", "Rating"};
+			String result = GUI.webConnect(VIEW_SUPPS);
+			JSONArray arr = new JSONArray(result);
+			Object[][] data = new Object[arr.length()][7];
+			JComboBox<String> ratings = new JComboBox<String>();
+			ratings.addItem("Choose to Rate");
+			ratings.setBackground(Color.WHITE);
+			for (int i = 0; i < arr.length(); i++) {
+				JSONObject obj = arr.getJSONObject(i);
+				data[i][0] = obj.getString("SupplementName");
+				data[i][1] = obj.getString("Price");
+				data[i][2] = obj.getString("Fat");
+				data[i][3] = obj.getString("Carbs");
+				data[i][4] = obj.getString("Protein");
+				data[i][5] = obj.getString("Calories");
+				ratings.addItem(obj.getString("SupplementName"));
+				if (!obj.get("Rating").equals(null)) {
+					data[i][6] = obj.getString("Rating");
+				} else {
+					data[i][6] = 0;
+				}
+			}
+			final JTable table = new JTable(new DefaultTableModel(data, header)) {
+				/** A generated Serial Version UID. */
+				private static final long serialVersionUID = -4651154286147356726L;
+
+				@Override
+				public boolean isCellEditable(int row, int column) {
+					return false;
+				}
+			};
+			final JScrollPane pane = new JScrollPane(table);
+			
+			pane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+			table.getTableHeader().setReorderingAllowed(false);
+			table.setPreferredSize(new Dimension(580, 400 - table.getRowHeight() - 10));
+			table.getColumnModel().getColumn(0).setPreferredWidth(200);
+			pane.setBackground(Color.WHITE);
+			pane.setPreferredSize(new Dimension(580, 400));
+			ratings.addItemListener(new ItemListener() {
+				private String index = "";
+				@Override
+				public void itemStateChanged(ItemEvent arg0) {
+					if (ratings.getSelectedIndex() > 0 
+							&& !index.equals(ratings.getSelectedItem())) {
+						index = ratings.getSelectedItem().toString();
+						JPanel panel = new JPanel();
+						JLabel label = new JLabel("Rate " 
+						+ ratings.getSelectedItem().toString());
+						JComboBox<Integer> rate = new JComboBox<Integer>();
+						for (int i = 1; i < 6; i++) {
+							rate.addItem(i);
+						}
+						panel.setBackground(Color.WHITE);
+						panel.add(label);
+						panel.add(rate);
+						if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, panel, 
+								"Rate a supplement", 
+								JOptionPane.OK_CANCEL_OPTION)) {
+							String name = ratings.getSelectedItem().toString();
+							String url = RATE_SUPP + "&email=" + GUI.EMAIL + "&name=" 
+								+ index.replaceAll(" ", "_") + "&rate=" 
+									+ rate.getSelectedItem();
+							if (GUI.webConnect(url).contains("failure")) {
+								JOptionPane.showMessageDialog(
+			            		        myPanel, "You already rated this supplement!",
+			            		        "Failure", JOptionPane.ERROR_MESSAGE);	
+							} else {
+								JOptionPane.showMessageDialog(
+			            		        myPanel, "Rating successful! new rating for supplement"
+			            		        		+ " will be shown next time you log in.",
+			            		        "Failure", JOptionPane.INFORMATION_MESSAGE);	
+							}
+						}
+						
+					}
+				}
+				
+			});
+			panel.add(pane);
+			pane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+			panel.add(ratings);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return panel;
+		
 	}
 	
 	
@@ -144,12 +287,11 @@ public class GymUserPanel extends Observable {
 				"Enter your cardio workout information", 
 				JOptionPane.OK_CANCEL_OPTION)) {
 			int num = getWorkoutNumber();
-			String url = ADD_CARDIO + "&email=" + GUI.EMAIL + "&num=" + num 
+			String url = ADD_CARDIO + "&email=" + GUI.EMAIL + "&name=" +  cardioName
+					+ "&num=" + num 
 					+ "&dur=" + durationOptions.getSelectedItem()
 					+ "&int=" + intensityOptions.getSelectedItem();
-			System.out.println(url);
-			
-//			System.out.println(GUI.webConnect(url));
+			rateWorkout(cardioName);
 		}
 	}
 	
@@ -161,7 +303,84 @@ public class GymUserPanel extends Observable {
 		addCardioWorkout.setEnabled(!bool);
 		finish.setEnabled(bool);
 	}	
+	
+	private void addLoggedWorkouts(JPanel panel) {
+		try {
+			JSONArray arr = new JSONArray(GUI.webConnect(VIEW_LOGGED_WORKOUTS));
+			for (int i = 0; i < arr.length(); i++) {
+				JSONObject obj = arr.getJSONObject(i);
+				JButton button = new JButton(obj.getString("WorkoutName"));
+				addLoggedWorkoutActionListener(button);
+				loggedWorkouts.put(button, obj.getString("WorkoutNumber"));
+			}
+			for (JButton b : loggedWorkouts.keySet()) {
+				panel.add(b);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		panel.setPreferredSize(new Dimension(100, 200));
+		panel.setBackground(Color.WHITE);
+	}	
+	
+	private void addLoggedWorkoutActionListener(JButton button) {
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent event) {
+				try {
+				for (JButton b : loggedWorkouts.keySet()) {
+					if (event.getActionCommand().equals(b.getText())) {
+						JPanel p = new JPanel();
+						JScrollPane pane = new JScrollPane(p);
+						pane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+						pane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+						p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+						String url = GUI.URL + "cmd=getallexercises&email=" + GUI.EMAIL 
+								+ "&num=" + loggedWorkouts.get(b);
+						String result = GUI.webConnect(url);
+						JSONArray arr = new JSONArray(result);
+						if (result.contains("Intensity")) {
+							JSONObject obj = arr.getJSONObject(0);
+							JLabel intensity = new JLabel("Intensity: " + obj.getString("Intensity"));
+							JLabel duration = new JLabel("Duration: " + obj.getString("Duration"));
+							p.add(intensity);
+							p.add(duration);
+							JOptionPane.showConfirmDialog(myPanel, pane, 
+									"Workout Information for " + obj.getString("WorkoutName"),
+									JOptionPane.OK_CANCEL_OPTION);
+						} else {
+							Map<String, List<String[]>> map = new HashMap<String, List<String[]>>();
+							for (int i = 0; i < arr.length(); i++) {
+								JSONObject obj = arr.getJSONObject(i);
+								String exName = obj.getString("ExerciseName");
+								if (!map.containsKey(exName)) {
+									map.put(exName, new ArrayList<String[]>());
+								}
+								map.get(exName).add(new String[]{obj.getString("Weight"), obj.getString("Repetitions")});
+							}
+							for (String s : map.keySet()) {
+								JLabel name = new JLabel("Exercise: " + s);
+								p.add(name);
+								for (String[] i : map.get(s)) {
+									JLabel weight = new JLabel("        Weight: " + i[0]);
+									JLabel reps = new JLabel("        Reps: " + i[1]);
+									p.add(weight);
+									p.add(reps);
+								}
+							}
+							JOptionPane.showConfirmDialog(myPanel, pane, 
+									"Workout Information for " + b.getText(),
+									JOptionPane.OK_CANCEL_OPTION);
+						}
+					}
+				}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		
+	}
 	private void addComboBoxListener() {
 		myDays.addItemListener(new ItemListener() {
 
@@ -175,6 +394,7 @@ public class GymUserPanel extends Observable {
 					String name = obj0.getString("WorkoutName");
 					currentWorkout.setText("Current Workout: " + name);
 					if (result.contains("WorkoutDescription")) {
+						cardioName = name;
 						enableButtons(false);
 					} else {
 							enableButtons(true);
@@ -240,11 +460,13 @@ public class GymUserPanel extends Observable {
 						workout.addSet(button.getText(), w, r);
 					} catch (NumberFormatException ex) {
 						JOptionPane.showMessageDialog(
-	            		        myPanel, "Must enter numbers only!", "Failure", JOptionPane.ERROR_MESSAGE);
+	            		        myPanel, "Must enter numbers only!", "Failure", 
+	            		        JOptionPane.ERROR_MESSAGE);
 					
 					} catch (IllegalArgumentException ex) {
 						JOptionPane.showMessageDialog(
-	            		        myPanel, "Both fields required", "Failure", JOptionPane.ERROR_MESSAGE);
+	            		        myPanel, "Both fields required", "Failure", 
+	            		        JOptionPane.ERROR_MESSAGE);
 					
 					}
 					
@@ -257,6 +479,9 @@ public class GymUserPanel extends Observable {
 	
 	private JPanel getScrollPanel() {
 		final JPanel innerPanel = new JPanel();
+		JPanel loggedWorkouts = new JPanel();
+		loggedWorkouts.setLayout(new BoxLayout(loggedWorkouts, BoxLayout.Y_AXIS));
+		JScrollPane pane = new JScrollPane(loggedWorkouts);
 //		scrollPane = new JScrollPane(innerPanel);
 		final JLabel text = new JLabel("<html>To log a workout, press one of the exercise "
 				+ "buttons to add a set.<br>Workouts are only saved if finish is "
@@ -282,7 +507,8 @@ public class GymUserPanel extends Observable {
 		innerPanel.add(Box.createVerticalStrut(5));
 		innerPanel.add(exercise4);
 		innerPanel.add(Box.createVerticalStrut(5));
-
+		loggedWorkouts.add(new JLabel("Logged Workouts"));
+		addLoggedWorkouts(loggedWorkouts);
 		
 		
 		
@@ -301,19 +527,19 @@ public class GymUserPanel extends Observable {
 			public void actionPerformed(ActionEvent arg0) {
 				if (workout != null && workout.hasWorkout()) {
 					int num = getWorkoutNumber();
-					System.out.println(GUI.webConnect(ADD_WORKOUT + "&num=" + num 
-							+ "&name=" + workout.getName() + "&email=" + GUI.EMAIL));
 					Map<String, List<int[]>> exercises = workout.getExercises();
 					int set = 1;
 					for (String s : exercises.keySet()) {
 						List<int[]> currentList = exercises.get(s);
 						for (int[] a : currentList) {
-							System.out.println(GUI.webConnect(ADD_SET + "&email=" 
-						+ GUI.EMAIL +  "&weight=" + a[0] + "&reps=" + a[1] + "&name=" + s 
-						+ "&num=" + num + "&set=" + set));
+							String url = ADD_SET + "&email=" 
+									+ GUI.EMAIL +  "&weight=" + a[0] + "&reps=" + a[1] + "&name=" + s.replaceAll(" ", "_") 
+									+ "&num=" + num + "&set=" + set;
 							set++;
 						}
-					}					
+					}	
+					rateWorkout(workout.getName());
+					workout.clearExercises();
 				}
 				
 			}
@@ -330,7 +556,37 @@ public class GymUserPanel extends Observable {
 		bottom.add(finish);
 		bottom.add(addCardioWorkout);
 		panel.add(bottom);
+		panel.add(loggedWorkouts);
 		return panel;
+	}
+	
+	private void rateWorkout(String name) {
+		JPanel panel = new JPanel();
+		JLabel label = new JLabel("How would you rate this workout? " );
+		JComboBox<Integer> rate = new JComboBox<Integer>();
+		for (int i = 1; i < 6; i++) {
+			rate.addItem(i);
+		}
+		panel.setBackground(Color.WHITE);
+		panel.add(label);
+		panel.add(rate);
+		if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, panel, 
+				"Please rate this workout", 
+				JOptionPane.OK_CANCEL_OPTION)) {
+			String url = (RATE_WORKOUT + "&email=" + GUI.EMAIL + "&name=" + name + "&rate=" 
+					+ rate.getSelectedItem());
+			url = url.replaceAll(" ", "_");
+			if (GUI.webConnect(url).contains("failure")) {
+				JOptionPane.showMessageDialog(
+        		        myPanel, "You already rated this workout! Workouts can only be rated once",
+        		        "Failure", JOptionPane.ERROR_MESSAGE);	
+			} else {
+				JOptionPane.showMessageDialog(
+        		        myPanel, "Rating successful! Thank you for completing this workout",
+        		        "Failure", JOptionPane.INFORMATION_MESSAGE);	
+			}
+		}
+				
 	}
 	
 	private void setListeners(final JButton logout, final JButton supplements) {

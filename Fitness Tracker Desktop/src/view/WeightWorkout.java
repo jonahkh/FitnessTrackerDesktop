@@ -26,6 +26,11 @@ public class WeightWorkout {
 		return exercises;
 	}
 	
+	
+	public void clearExercises() {
+		exercises.clear();
+	}
+	
 	public String getName() {
 		return name;
 	}

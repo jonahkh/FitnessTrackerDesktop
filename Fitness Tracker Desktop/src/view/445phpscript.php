@@ -56,7 +56,8 @@ try {
             $weight = isset($_GET['weight']) ? $_GET['weight'] : '';
             $gender = isset($_GET['gender']) ? $_GET['gender'] : '';
             $days = isset($_GET['days']) ? $_GET['days'] : '';
-
+			$first = str_replace('_', ' ', $first);
+			$last = str_replace('_', ' ', $last);
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 echo '{"result": "fail", "error": "Please enter a valid email."}';
             }
@@ -100,9 +101,12 @@ try {
             break;
         case "logworkout":
             $name = isset($_GET['name']) ? $_GET['name'] : '';
+            $name = str_replace('_', ' ', $name);
             $email = isset($_GET['email']) ? $_GET['email'] : '';
             $num = isset($_GET['num']) ? $_GET['num'] : '';
+           	$name = str_replace('_', ' ', $name);
             $sql = "INSERT INTO LoggedWorkout VALUES ('$num', '$email', '$name')";
+           
             if ($db->query($sql)) {
                 echo '{"result": "success"}';
                 $db = null;
@@ -110,25 +114,26 @@ try {
                 echo '{"result": "failure"}';
             }
             break;
-        	case "addset":
-                $email = isset($_GET['email']) ? $_GET['email'] : '';
-                $name = isset($_GET['name']) ? $_GET['name'] : '';
-                $weight = isset($_GET['weight']) ? $_GET['weight'] : '';
-                $reps = isset($_GET['reps']) ? $_GET['reps'] : '';
-                $num = isset($_GET['num']) ? $_GET['num'] : '';
-                $set = isset($_GET['set']) ? $_GET['set'] : '';
-
-                $sql = "INSERT INTO Exercise (Email, WorkoutNumber, Weight, Repetitions, ExerciseName) VALUES ('$set', ''$email', '$num', '$weight', '$reps', '$name')";
-                if ($db->query($sql)) {
-                    echo '{"result": "success"}';
-                    $db = null;
-                } else {
-                    echo '{"result": "failure"}';
-                }
-                break;
+    	case "addset":
+            $email = isset($_GET['email']) ? $_GET['email'] : '';
+            $name = isset($_GET['name']) ? $_GET['name'] : '';
+            $weight = isset($_GET['weight']) ? $_GET['weight'] : '';
+            $reps = isset($_GET['reps']) ? $_GET['reps'] : '';
+            $num = isset($_GET['num']) ? $_GET['num'] : '';
+            $set = isset($_GET['set']) ? $_GET['set'] : '';
+           	$name = str_replace('_', ' ', $name);
+            $sql = "INSERT INTO Exercise VALUES ('$set', '$email', '$num', '$weight', '$reps', '$name')";
+            if ($db->query($sql)) {
+                echo '{"result": "success"}';
+                $db = null;
+            } else {
+                echo '{"result": "failure"}';
+            }
+            break;
 
             case "addexercise":
                 $workout_name = isset($_GET['workout']) ? $_GET['workout'] : '';
+                $workout_name = str_replace('_', ' ', $workout_name);
                 $exercise_name = isset($_GET['exercise']) ? $_GET['exercise'] : '';
                 $sql = "INSERT INTO WeightWorkout (Email, WorkoutNumber, Weight, Repetitions, ExerciseName) VALUES ('$workout', '$exercise')";
                 if ($db->query($sql)) {
@@ -177,13 +182,72 @@ try {
             $num = isset($_GET['num']) ? $_GET['num'] : '';
             $dur = isset($_GET['dur']) ? $_GET['dur'] : '';
             $int= isset($_GET['int']) ? $_GET['int'] : '';
-            $sql = "INSERT INTO CardioSession VALUES ('$email', '$num', '$dur', '$int')";
+            $name = isset($_GET['name']) ? $_GET['name'] : '';
+            $sql = "INSERT INTO CardioSession VALUES ('$email', '$name', '$num', '$dur', '$int')";
 			$q = $db->prepare($sql);
             $q->execute();
             $result = $q->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode($result);
     		break;    
-    
+		case "viewsupplements":
+//			$sql = "SELECT *, (Protein * 4 + Fat * 9 + Carbs * 4) AS Calories FROM Supplement";
+			$sql = "SELECT *, SUM(Protein * 4 + Fat * 9 + Carbs * 4) AS Calories FROM Supplement LEFT JOIN " 
+					. "(SELECT SupplementName AS DEL, AVG(Rating) AS Rating FROM SupplementRating GROUP BY SupplementName) "
+					. "AS newSup ON Supplement.SupplementName = newSup.DEL GROUP BY Supplement.SupplementName";
+			$q = $db->prepare($sql);
+            $q->execute();
+            $result = $q->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode($result);
+			break;
+		case "ratesupplements":
+        	$email = isset($_GET['email']) ? $_GET['email'] : '';
+        	$rate= isset($_GET['rate']) ? $_GET['rate'] : '';
+        	$name = isset($_GET['name']) ? $_GET['name'] : '';
+        	$name = str_replace('_', ' ', $name);
+			$sql = "INSERT INTO SupplementRating VALUES ('$name', '$email', '$rate')";
+			if ($db->query($sql)) {
+                echo '{"result": "success"}';
+                $db = null;
+            } else {
+                echo '{"result": "failure"}';
+            }
+            break;
+        case "rateworkout":
+        	$email = isset($_GET['email']) ? $_GET['email'] : '';
+        	$rate= isset($_GET['rate']) ? $_GET['rate'] : '';
+        	$name = isset($_GET['name']) ? $_GET['name'] : '';
+        	$name = str_replace('_', ' ', $name);
+			$sql = "INSERT INTO WorkoutRating VALUES ('$name', '$email', '$rate')";
+			if ($db->query($sql)) {
+                echo '{"result": "success"}';
+                $db = null;
+            } else {
+                echo '{"result": "failure"}';
+            }
+            break;
+        case "viewloggedworkout":
+        	$email = isset($_GET['email']) ? $_GET['email'] : '';
+        	$sql = "SELECT * from LoggedWorkout WHERE Email = '$email'";
+        	$q = $db->prepare($sql);
+            $q->execute();
+            $result = $q->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode($result);
+        case "getallexercises": 
+        	$email = isset($_GET['email']) ? $_GET['email'] : '';
+            $num = isset($_GET['num']) ? $_GET['num'] : '';
+            $sql = "SELECT * FROM CardioSession WHERE Email = '$email' AND WorkoutNumber = '$num'";
+            $q = $db->prepare($sql);
+            $q->execute();
+            $result = $q->fetchAll(PDO::FETCH_ASSOC);
+            if ($result) {
+            	echo json_encode($result);
+            } else {
+	         	$sql = "SELECT * FROM Exercise WHERE Email = '$email' AND WorkoutNumber = '$num'";
+	            $q = $db->prepare($sql);
+	            $q->execute();
+	            $result = $q->fetchAll(PDO::FETCH_ASSOC);
+	            echo json_encode($result);
+            }
     }
 
 }
