@@ -15,6 +15,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+/**
+ * Class representing the registration panel. 
+ * 
+ * @author Jonah Howard
+ *
+ */
 public class RegisterPanel extends Observable {
 	
 	/** Text field for the first name. */
@@ -77,6 +83,7 @@ public class RegisterPanel extends Observable {
 		
 	}
 	
+	/** @return a JPanel with all of the text fields for registering. */
 	private JPanel textFields() {
 		final JPanel panel = new JPanel();
 		panel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
@@ -140,6 +147,12 @@ public class RegisterPanel extends Observable {
 		return panel;
 	}
 	
+	/**
+	 * Add listeners for the register and cancel buttons.
+	 * 
+	 * @param register button
+	 * @param cancel button
+	 */
 	private void addListeners(final JButton register, final JButton cancel) {
 		register.addActionListener(new ActionListener() {
 			@Override

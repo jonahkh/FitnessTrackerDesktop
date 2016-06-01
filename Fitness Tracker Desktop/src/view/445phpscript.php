@@ -131,18 +131,18 @@ try {
             }
             break;
 
-            case "addexercise":
-                $workout_name = isset($_GET['workout']) ? $_GET['workout'] : '';
-                $workout_name = str_replace('_', ' ', $workout_name);
-                $exercise_name = isset($_GET['exercise']) ? $_GET['exercise'] : '';
-                $sql = "INSERT INTO WeightWorkout (Email, WorkoutNumber, Weight, Repetitions, ExerciseName) VALUES ('$workout', '$exercise')";
-                if ($db->query($sql)) {
-                    echo '{"result": "success"}';
-                    $db = null;
-                } else {
-                    echo '{"result": "failure"}';
-                }
-                break;
+        case "addexercise":
+            $workout_name = isset($_GET['workout']) ? $_GET['workout'] : '';
+            $workout_name = str_replace('_', ' ', $workout_name);
+            $exercise_name = isset($_GET['exercise']) ? $_GET['exercise'] : '';
+            $sql = "INSERT INTO WeightWorkout (Email, WorkoutNumber, Weight, Repetitions, ExerciseName) VALUES ('$workout', '$exercise')";
+            if ($db->query($sql)) {
+                echo '{"result": "success"}';
+                $db = null;
+            } else {
+                echo '{"result": "failure"}';
+            }
+            break;
 
         case "addworkout":
             $day = isset($_GET['day']) ? $_GET['day'] : '';
@@ -184,13 +184,16 @@ try {
             $int= isset($_GET['int']) ? $_GET['int'] : '';
             $name = isset($_GET['name']) ? $_GET['name'] : '';
             $sql = "INSERT INTO CardioSession VALUES ('$email', '$name', '$num', '$dur', '$int')";
-			$q = $db->prepare($sql);
-            $q->execute();
-            $result = $q->fetchAll(PDO::FETCH_ASSOC);
-            echo json_encode($result);
+            $sql2 = "INSERT INTO LoggedWorkout VALUES ('$num', '$email', '$name')";
+			if ($db->query($sql2)) {
+				$db->query($sql); 
+                echo '{"result": "success"}';
+                $db = null;
+                } else {
+                    echo '{"result": "failure"}';
+                }
     		break;    
 		case "viewsupplements":
-//			$sql = "SELECT *, (Protein * 4 + Fat * 9 + Carbs * 4) AS Calories FROM Supplement";
 			$sql = "SELECT *, SUM(Protein * 4 + Fat * 9 + Carbs * 4) AS Calories FROM Supplement LEFT JOIN " 
 					. "(SELECT SupplementName AS DEL, AVG(Rating) AS Rating FROM SupplementRating GROUP BY SupplementName) "
 					. "AS newSup ON Supplement.SupplementName = newSup.DEL GROUP BY Supplement.SupplementName";

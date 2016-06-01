@@ -29,14 +29,15 @@ public class LoginPanel extends Observable {
 	/** The current panel. */
 	private final JPanel myPanel;
 	
+	/** Textfield for the email. */
 	private JTextField myEmail;
 
+	/** Textfield for the password. */
 	private JPasswordField myPassword;
 	
 	/** Initialize a new LoginPanel. */
 	public LoginPanel() {
 		myPanel = new JPanel();
-//		myPanel.setLayout(new BorderLayout());
 		setUp();
 	}
 	
@@ -80,25 +81,11 @@ public class LoginPanel extends Observable {
 		buttonPanel.add(login);
 		buttonPanel.add(register);
 		buttonPanel.add(adminLogin);
-//		myPanel.add(panel, BorderLayout.CENTER);
 		mainPanel.add(panel, BorderLayout.CENTER);
 		mainPanel.add(buttonPanel);
 		myPanel.add(mainPanel);
 		myPanel.setBackground(Color.WHITE);
 		panel.setBackground(Color.WHITE);
-		// Prompt for admin credentials
-//		int option = JOptionPane.showOptionDialog(myPanel, panel, "Login",
-//				JOptionPane.OK_OPTION, JOptionPane.PLAIN_MESSAGE,
-//				null, options, options[0]);
-		final String parsedPassword = new String(myPassword.getPassword());
-		// Verify that correct credentials were entered
-//		if (option == 0 && AdminPanel.PASSWORD.equals(parsedPassword) 
-//				&& AdminPanel.USERNAME.equals(user.getText())) {
-//			return true;
-//		} else if (option == 0){						
-//			JOptionPane.showMessageDialog(this, "Incorrect login information, please try again");
-//		}
-		
 	}
 	
 	/**

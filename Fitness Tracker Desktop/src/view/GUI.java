@@ -104,7 +104,7 @@ public class GUI extends JFrame implements Observer {
 		myLayout.addLayoutComponent(myAdminPanel, ADMIN);
 		myLayout.addLayoutComponent(myGymUserPanel, USER);
 		myLayout.addLayoutComponent(myRegisterPanel, REGISTER);
-		myLayout.show(myCardPanel, USER);
+		myLayout.show(myCardPanel, ADMIN);
 		myCardPanel.revalidate();
 	}
 	

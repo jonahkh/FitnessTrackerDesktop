@@ -44,39 +44,89 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
+/**
+ * Class representing the Gym User interface. Allows gym users to view the daily workouts and 
+ * log them, view their logged workouts, view all of the supplements, and rate supplements.
+ * 
+ * @author jonah Howard
+ *
+ */
 public class GymUserPanel extends Observable {
+	
+	// Constants to store and retrieve data from database
+	/** Viewing all workouts for a day. */
 	public static final String VIEW_WORKOUTS_URL = "cmd=viewworkouts&day=";
+	
+	/** Adding a new set. */
 	public static final String ADD_SET = GUI.URL + "cmd=addset";
+	
+	/** Adding a weight workout. */
 	public static final String ADD_WORKOUT = GUI.URL + "cmd=logworkout";
+	
+	/** Adding a cardio workout. */
 	public static final String ADD_CARDIO = GUI.URL + "cmd=cardiosession";
+	
+	/** Fetching all of the supplements. */
 	public static final String VIEW_SUPPS = GUI.URL + "cmd=viewsupplements";
+	
+	/** Rating a supplement. */
 	public static final String RATE_SUPP = GUI.URL + "cmd=ratesupplements";
+	
+	/** Rating a workout. */
 	public static final String RATE_WORKOUT = GUI.URL + "cmd=rateworkout";
+	
+	/** Fetch logged workouts. */
 	public static final String VIEW_LOGGED_WORKOUTS = GUI.URL + "cmd=viewloggedworkout" 
 												+ "&email=" + GUI.EMAIL;
+	
+	/**  The main JPanel for this class. */
 	private final JPanel myPanel;
+	
+	/** A mapping of exercise names to their buttons. */
 	private final Map<String, JButton> buttons;
+	
+	/** The main panel for viewing and logging workouts. */
 	private JPanel myWorkoutPanel;
-	private JPanel mySupplementPanel;
+	
+	/** Combo box displaying each day of the week. */
 	private JComboBox<String> myDays;
-	private JScrollPane scrollPane;
+	
+	// Exercises for current workout
+	/** Exercise one. */
 	private JButton exercise1;
+	
+	/** Exercise two. */
 	private JButton exercise2;
+	
+	/** Exercise three. */
 	private JButton exercise3;
+	
+	/** Exercise four. */
 	private JButton exercise4;
+	
+	/** The current weight workout being performed. */
 	private WeightWorkout workout = null;
+	
+	/** Label displaying the name of the current workout. */
 	private JLabel currentWorkout;
+	
+	/** Button for adding a cardio workout. */
 	private JButton addCardioWorkout;
+	
+	/** Button for finishing a weight workout. */
 	private JButton finish;
+	
+	/** The name of the cardio exercise completed. Default empty. */
 	private String cardioName = "";
+	
+	/** Maps the JButtons for logged workouts to their respective workout numbers. */
 	private Map<JButton, String> loggedWorkouts;
 
-	
+	/** Initialize a new GymUserPanel. */
 	public GymUserPanel() {
 		myPanel = new JPanel();
 		buttons = new HashMap<>();
 		myWorkoutPanel = new JPanel();
-		mySupplementPanel = new JPanel();
 		currentWorkout = new JLabel("Current Workout: ");
 		loggedWorkouts = new HashMap<JButton, String>();
 		myDays = new JComboBox<String>();
@@ -84,6 +134,7 @@ public class GymUserPanel extends Observable {
 		myDays.setSelectedIndex(1);
 	}
 	
+	/** Set up the main panel and all of its components. */
 	private void setUp() {
 		myPanel.setBackground(Color.WHITE);
 		myPanel.setLayout(new BoxLayout(myPanel, BoxLayout.Y_AXIS));
@@ -163,6 +214,11 @@ public class GymUserPanel extends Observable {
 		});
 	}
 	
+	/**
+	 * Set up the supplements panel.
+	 * 
+	 * @return the supplements panel
+	 */
 	private JPanel setUpSupplementPanel() {
 		final JPanel panel = new JPanel();
 
@@ -228,7 +284,6 @@ public class GymUserPanel extends Observable {
 						if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, panel, 
 								"Rate a supplement", 
 								JOptionPane.OK_CANCEL_OPTION)) {
-							String name = ratings.getSelectedItem().toString();
 							String url = RATE_SUPP + "&email=" + GUI.EMAIL + "&name=" 
 								+ index.replaceAll(" ", "_") + "&rate=" 
 									+ rate.getSelectedItem();
@@ -258,7 +313,9 @@ public class GymUserPanel extends Observable {
 		
 	}
 	
-	
+	/**
+	 * For logging a cardio workout. 
+	 */
 	private void cardioWorkout() {
 		enableButtons(false);
 		JPanel panel = new JPanel();
@@ -291,19 +348,30 @@ public class GymUserPanel extends Observable {
 					+ "&num=" + num 
 					+ "&dur=" + durationOptions.getSelectedItem()
 					+ "&int=" + intensityOptions.getSelectedItem();
+			System.out.println(url);
+			System.out.println(GUI.webConnect(url));
 			rateWorkout(cardioName);
 		}
 	}
 	
+	/** @param bool enable or disable buttons according to this value. */
 	private void enableButtons(boolean bool) {
+		// Exercise buttons only enabled when on the workouts panel
 		exercise1.setEnabled(bool);
 		exercise2.setEnabled(bool);
 		exercise3.setEnabled(bool);
 		exercise4.setEnabled(bool);
+		// Only enabled when the current day selected is a cardio workout
 		addCardioWorkout.setEnabled(!bool);
+		// Only enabled for a weight workout
 		finish.setEnabled(bool);
 	}	
 	
+	/**
+	 * Set up the JPanel for viewing logged workouts.
+	 * 
+	 * @param panel the panel for viewing logged workouts
+	 */
 	private void addLoggedWorkouts(JPanel panel) {
 		try {
 			JSONArray arr = new JSONArray(GUI.webConnect(VIEW_LOGGED_WORKOUTS));
@@ -323,6 +391,11 @@ public class GymUserPanel extends Observable {
 		panel.setBackground(Color.WHITE);
 	}	
 	
+	/** 
+	 * Add listener for the logged workout buttons.
+	 * 
+	 * @param button current button
+	 */
 	private void addLoggedWorkoutActionListener(JButton button) {
 		button.addActionListener(new ActionListener() {
 			@Override
@@ -381,6 +454,10 @@ public class GymUserPanel extends Observable {
 		});
 		
 	}
+	
+	/**
+	 * Set up the listener for the combobox representing the days.
+	 */
 	private void addComboBoxListener() {
 		myDays.addItemListener(new ItemListener() {
 
@@ -416,6 +493,7 @@ public class GymUserPanel extends Observable {
 		});
 	}
 	
+	/** @return the workout number fetched from the database. */
 	private int getWorkoutNumber() {
 		String workoutNumber = GUI.webConnect(GUI.URL 
 				+ "&cmd=getworkoutnumber&email=" + GUI.EMAIL);
@@ -431,6 +509,11 @@ public class GymUserPanel extends Observable {
 		}
 	}
 	
+	/**
+	 * Set up listener for adding an exercise.
+	 * 
+	 * @param button for the exercise
+	 */
 	private void getExerciseListneers(JButton button) {
 		button.addActionListener(new ActionListener() {
 			@Override
@@ -477,12 +560,12 @@ public class GymUserPanel extends Observable {
 		});
 	}
 	
+	/** @return the main JPanel for the GymUSerPanel for the user to log workouts. */
 	private JPanel getScrollPanel() {
 		final JPanel innerPanel = new JPanel();
 		JPanel loggedWorkouts = new JPanel();
 		loggedWorkouts.setLayout(new BoxLayout(loggedWorkouts, BoxLayout.Y_AXIS));
 		JScrollPane pane = new JScrollPane(loggedWorkouts);
-//		scrollPane = new JScrollPane(innerPanel);
 		final JLabel text = new JLabel("<html>To log a workout, press one of the exercise "
 				+ "buttons to add a set.<br>Workouts are only saved if finish is "
 				+ "pressed</html>");
@@ -528,6 +611,8 @@ public class GymUserPanel extends Observable {
 				if (workout != null && workout.hasWorkout()) {
 					int num = getWorkoutNumber();
 					Map<String, List<int[]>> exercises = workout.getExercises();
+					GUI.webConnect(ADD_WORKOUT + "&num=" + num 
+							 	+ "&name=" + workout.getName() + "&email=" + GUI.EMAIL);
 					int set = 1;
 					for (String s : exercises.keySet()) {
 						List<int[]> currentList = exercises.get(s);
@@ -535,6 +620,7 @@ public class GymUserPanel extends Observable {
 							String url = ADD_SET + "&email=" 
 									+ GUI.EMAIL +  "&weight=" + a[0] + "&reps=" + a[1] + "&name=" + s.replaceAll(" ", "_") 
 									+ "&num=" + num + "&set=" + set;
+							GUI.webConnect(url);
 							set++;
 						}
 					}	
@@ -560,6 +646,7 @@ public class GymUserPanel extends Observable {
 		return panel;
 	}
 	
+	/** @param name rate the workout with the passed name. */
 	private void rateWorkout(String name) {
 		JPanel panel = new JPanel();
 		JLabel label = new JLabel("How would you rate this workout? " );
@@ -589,6 +676,11 @@ public class GymUserPanel extends Observable {
 				
 	}
 	
+	/**
+	 * Set listeners for the logout and view supplements buttons. 
+	 * @param logout button to logout
+	 * @param supplements button to view supplements
+	 */
 	private void setListeners(final JButton logout, final JButton supplements) {
 		logout.addActionListener(new ActionListener() {
 			@Override
@@ -600,6 +692,8 @@ public class GymUserPanel extends Observable {
 			}
 		});
 	}
+	
+	/** @return this JPanel. */
 	public JPanel getPanel() {
 		return myPanel;
 	}
