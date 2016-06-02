@@ -157,7 +157,6 @@ public class RegisterPanel extends Observable {
 		register.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent theEvent) {
-				//TODO validate
 				String first = myFirstName.getText();
 				String last = myLastName.getText();
 				String email = myEmail.getText();

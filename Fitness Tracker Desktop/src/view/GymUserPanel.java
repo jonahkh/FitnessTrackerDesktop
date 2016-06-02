@@ -77,7 +77,9 @@ public class GymUserPanel extends Observable {
 	
 	/** Fetch logged workouts. */
 	public static final String VIEW_LOGGED_WORKOUTS = GUI.URL + "cmd=viewloggedworkout" 
-												+ "&email=" + GUI.EMAIL;
+												+ "&email=";
+
+	public boolean isFirst = true;
 	
 	/**  The main JPanel for this class. */
 	private final JPanel myPanel;
@@ -130,12 +132,11 @@ public class GymUserPanel extends Observable {
 		currentWorkout = new JLabel("Current Workout: ");
 		loggedWorkouts = new HashMap<JButton, String>();
 		myDays = new JComboBox<String>();
-		setUp();
-		myDays.setSelectedIndex(1);
 	}
 	
 	/** Set up the main panel and all of its components. */
-	private void setUp() {
+	public void setUp() {
+		isFirst = false;
 		myPanel.setBackground(Color.WHITE);
 		myPanel.setLayout(new BoxLayout(myPanel, BoxLayout.Y_AXIS));
 		final JPanel supplementPanel = setUpSupplementPanel();
@@ -212,6 +213,7 @@ public class GymUserPanel extends Observable {
 				myPanel.revalidate();
 			}
 		});
+		myDays.setSelectedIndex(1);
 	}
 	
 	/**
@@ -281,9 +283,8 @@ public class GymUserPanel extends Observable {
 						panel.setBackground(Color.WHITE);
 						panel.add(label);
 						panel.add(rate);
-						if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, panel, 
-								"Rate a supplement", 
-								JOptionPane.OK_CANCEL_OPTION)) {
+						if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, 
+								panel, "Rate a supplement", JOptionPane.OK_CANCEL_OPTION)) {
 							String url = RATE_SUPP + "&email=" + GUI.EMAIL + "&name=" 
 								+ index.replaceAll(" ", "_") + "&rate=" 
 									+ rate.getSelectedItem();
@@ -348,8 +349,7 @@ public class GymUserPanel extends Observable {
 					+ "&num=" + num 
 					+ "&dur=" + durationOptions.getSelectedItem()
 					+ "&int=" + intensityOptions.getSelectedItem();
-			System.out.println(url);
-			System.out.println(GUI.webConnect(url));
+			GUI.webConnect(url);
 			rateWorkout(cardioName);
 		}
 	}
@@ -374,7 +374,7 @@ public class GymUserPanel extends Observable {
 	 */
 	private void addLoggedWorkouts(JPanel panel) {
 		try {
-			JSONArray arr = new JSONArray(GUI.webConnect(VIEW_LOGGED_WORKOUTS));
+			JSONArray arr = new JSONArray(GUI.webConnect(VIEW_LOGGED_WORKOUTS + GUI.EMAIL));
 			for (int i = 0; i < arr.length(); i++) {
 				JSONObject obj = arr.getJSONObject(i);
 				JButton button = new JButton(obj.getString("WorkoutName"));
@@ -429,7 +429,8 @@ public class GymUserPanel extends Observable {
 								if (!map.containsKey(exName)) {
 									map.put(exName, new ArrayList<String[]>());
 								}
-								map.get(exName).add(new String[]{obj.getString("Weight"), obj.getString("Repetitions")});
+								map.get(exName).add(new String[]{obj.getString("Weight"),
+										obj.getString("Repetitions")});
 							}
 							for (String s : map.keySet()) {
 								JLabel name = new JLabel("Exercise: " + s);

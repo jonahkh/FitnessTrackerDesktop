@@ -110,8 +110,8 @@ public class LoginPanel extends Observable {
 	                // Establish network access
 	                String s = GUI.webConnect(url.toString());
 	            	if (s.contains("success")) {
+	            		GUI.EMAIL = myEmail.getText().toLowerCase();
 	            		setChanged();
-	            		GUI.EMAIL = myEmail.getText();
 						notifyObservers(GUI.USER);
 						clearChanged();
 	            	} else if (s.contains("email")){
@@ -139,10 +139,35 @@ public class LoginPanel extends Observable {
 		adminLogin.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent theEvent) {
-				//TODO validate
-				setChanged();
-				notifyObservers(GUI.ADMIN);
-				clearChanged();
+				StringBuilder url = new StringBuilder(GUI.URL);
+
+                url.append("cmd=adminlogin&email=");
+                try {
+					url.append(URLEncoder.encode(myEmail.getText(), "UTF-8"));
+				
+	                url.append("&pwd=");
+	                url.append(URLEncoder.encode(myPassword.getText(), "UTF-8"));
+	                // Establish network access
+	                String s = GUI.webConnect(url.toString());
+	            	if (s.contains("success")) {
+	            		setChanged();
+	            		GUI.EMAIL = myEmail.getText();
+	    				notifyObservers(GUI.ADMIN);
+	    				clearChanged();
+	            	} else if (s.contains("valid")){
+	            		JOptionPane.showMessageDialog(
+	            		        myPanel, "User does not exist or invalid", "Failure", JOptionPane.ERROR_MESSAGE);
+	            	} else if (s.contains("email")) {
+	            		JOptionPane.showMessageDialog(
+	            				myPanel, "Not an administrator!", "Failure", JOptionPane.ERROR_MESSAGE);
+	            	} else if (s.contains("Incorrect password")) {
+	            		JOptionPane.showMessageDialog(
+	            		        null, "Incorrect password", "Failure", JOptionPane.ERROR_MESSAGE);
+	            	}
+                } catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 	}

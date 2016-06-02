@@ -15,6 +15,11 @@ import java.util.Observer;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+/**
+ * Main driver for the application. Hosts the JFrame and contains all main JPanels.
+ * 
+ * @author Jonah Howard
+ */
 public class GUI extends JFrame implements Observer {
 	
 	/** URL to connect to web service. */
@@ -22,7 +27,7 @@ public class GUI extends JFrame implements Observer {
 			"http://cssgate.insttech.washington.edu/~jonahkh/445phpscript.php?";
 	
 	/** The currently logged in email. */
-	protected static String EMAIL = "jonahkh@uw.edu";
+	protected static String EMAIL = null;
 	/** Represents the login page card. */
 	public static final String LOGIN = "LOGIN";
 	
@@ -35,6 +40,8 @@ public class GUI extends JFrame implements Observer {
 	/** Represents the gym user page card. */
 	public static final String USER = "USER";
 	
+	/** The user panel. */
+	private GymUserPanel userPanel;
 	
 	/** The login page. */
 	private final JPanel myLoginPanel;
@@ -59,16 +66,16 @@ public class GUI extends JFrame implements Observer {
 		final LoginPanel login = new LoginPanel();
 		final AdminPanel admin = new AdminPanel();
 		final RegisterPanel register = new RegisterPanel();
-		final GymUserPanel user = new GymUserPanel();
+		userPanel = new GymUserPanel();
 		
 		login.addObserver(this);
 		admin.addObserver(this);
 		register.addObserver(this);
-		user.addObserver(this);
+		userPanel.addObserver(this);
 		
 		myRegisterPanel = register.getPanel();
 		myAdminPanel = admin.getPanel();
-		myGymUserPanel = user.getPanel();
+		myGymUserPanel = userPanel.getPanel();
 		myLoginPanel = login.getPanel();
 		myCardPanel = new JPanel();
 		myLayout = new CardLayout(5, 5);
@@ -108,18 +115,21 @@ public class GUI extends JFrame implements Observer {
 		myCardPanel.revalidate();
 	}
 	
+	/**
+	 * Connect to the web service and retrieve the result. 
+	 * 
+	 * @param url the url to connect to the web service
+	 * @return the results from the web service 
+	 */
 	public static String webConnect(String url) {
         URL urlObject;
 		try {
 			urlObject = new URL(url.toString());
-		
-        HttpURLConnection urlConnection =  (HttpURLConnection) urlObject.openConnection();
-        InputStream content = urlConnection.getInputStream();
-        BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
-        return  buffer.readLine();
-
+	        HttpURLConnection urlConnection =  (HttpURLConnection) urlObject.openConnection();
+	        InputStream content = urlConnection.getInputStream();
+	        BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
+	        return  buffer.readLine();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return "error";
 		}
@@ -137,6 +147,9 @@ public class GUI extends JFrame implements Observer {
 	@Override
 	public void update(final Observable arg0, final Object theObject) {
 		if (theObject instanceof String) {
+			if (((String) theObject).equals(USER) && userPanel.isFirst) {
+				userPanel.setUp();
+			}
 			myLayout.show(myCardPanel, (String) theObject);
 			myCardPanel.revalidate();
 		}

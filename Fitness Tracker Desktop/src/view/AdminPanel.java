@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -21,15 +23,23 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class AdminPanel extends Observable {
 	
-	public static final String ADD_WORKOUT = "cmd=addworkout";
+	public static final String ADD_WORKOUT = GUI.URL + "cmd=addworkout";
+	public static final String GET_SUPPLEMENTS = GUI.URL + "cmd=getsupplementnames";
+	public static final String DELETE_SUPPLEMENT = GUI.URL + "cmd=deletesupplement";
+	public static final String ADD_SUPPLEMENT = GUI.URL + "cmd=addsupplement";
 	private final JPanel myPanel;
 	private JComboBox<String> myDays;
 	private Map<String, JButton> buttons;
 	private String index = "Select day to change";
 	private JRadioButton weightButton;
 	private JRadioButton cardioButton;
+	private String suppIndex = "";
 
 	
 	public AdminPanel() {
@@ -83,7 +93,9 @@ public class AdminPanel extends Observable {
 		myDays.addItem("friday");
 		myDays.addItem("saturday");
 		myDays.setBackground(Color.WHITE);
-		
+		final JComboBox<String> comboBox = getSupps();
+		final JLabel delete = new JLabel("Delete Supplement: ");
+		final JButton addSupplementButton = addSuppButton();
 		buttons.put("sunday", sunday);
 		buttons.put("monday", monday);
 		buttons.put("tuesday", tuesday);
@@ -96,21 +108,149 @@ public class AdminPanel extends Observable {
 		centerPanel.add(myDays);
 		centerPanel.setBackground(Color.WHITE);
 		northPanel.setBackground(Color.WHITE);
+//		northPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 		myPanel.add(northPanel, BorderLayout.NORTH);
-		northPanel.setMaximumSize(new Dimension(600, (int) northPanel.getMinimumSize().getHeight()));
-
+		northPanel.setMaximumSize(new Dimension(600, (int) logout.getMinimumSize().getHeight() + 20));
+		JPanel comboPanel = new JPanel();
+		comboPanel.setBackground(Color.WHITE);
+//		comboPanel.setMaximumSize(new Dimension(600, (int) comboBox.getMinimumSize().getHeight()));
+		centerPanel.setMaximumSize(new Dimension(600, (int) centerPanel.getPreferredSize().getHeight()));
+//		centerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		comboPanel.add(delete);
+		comboPanel.add(comboBox);
+		comboPanel.setMaximumSize(new Dimension(600, (int) comboPanel.getPreferredSize().getHeight()));
 		northPanel.add(adminView);
 		northPanel.add(logout);
+		addLogoutListener(logout);
+		myPanel.add(Box.createVerticalStrut(10));
 		myPanel.add(centerPanel);
+		myPanel.add(comboPanel);
+		myPanel.add(addSupplementButton);
 		addComboBoxListener();
 		addButtonListeners();
+	}
+	
+	private JButton addSuppButton() {
+		JButton button = new JButton("Add Supplement");
+		button.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				final JPanel panel = new JPanel();
+				panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+				JPanel pricePanel = new JPanel();
+				JPanel carbsPanel = new JPanel();
+				JPanel proPanel = new JPanel();
+				JPanel namePanel = new JPanel();
+				JPanel fatPanel = new JPanel();
+				JTextField nameField = new JTextField(10);
+				
+				JLabel priceLabel = new JLabel("Price: ");
+				JLabel carbsLabel = new JLabel("Carbs: ");
+				JLabel proLabel = new JLabel("Protein: ");
+				JLabel fatLabel = new JLabel("Fat: ");
+				JLabel nameLabel = new JLabel("Name: ");
+				
+				JComboBox<String> priceBox = new JComboBox<String>();
+				JComboBox<String> carbsBox = new JComboBox<String>();
+				JComboBox<String> fatBox = new JComboBox<String>();
+				JComboBox<String> proBox = new JComboBox<String>();
+				
+				namePanel.add(nameLabel);
+				namePanel.add(nameField);
+				
+				pricePanel.add(priceLabel);
+				pricePanel.add(priceBox);
+				
+				carbsPanel.add(carbsLabel);
+				carbsPanel.add(carbsBox);
+				
+				proPanel.add(proLabel);
+				proPanel.add(proBox);
+				
+				fatPanel.add(fatLabel);
+				fatPanel.add(fatBox);
+				panel.add(namePanel);
+				panel.add(pricePanel);
+				panel.add(fatPanel);
+				panel.add(carbsPanel);
+				panel.add(proPanel);
+				if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, panel, 
+						"Enter in new supplement information", 
+						JOptionPane.OK_CANCEL_OPTION)) {
+				}
+			}
+			
+		});
+		return button;
+	}
+	
+	private JComboBox<String> getSupps() {
+		try {
+			final JComboBox<String> supps = new JComboBox<String>();
+			supps.setBackground(Color.WHITE);
+			String result = GUI.webConnect(GET_SUPPLEMENTS);
+			System.out.println(result);
+			JSONArray arr = new JSONArray(result);
+			supps.addItem("Choose to delete");
+			for (int i = 0; i < arr.length(); i++) {
+				JSONObject obj = arr.getJSONObject(i);
+				supps.addItem(obj.getString("SupplementName"));
+			}
+			supps.addItemListener(new ItemListener() {
+
+				@Override
+				public void itemStateChanged(ItemEvent arg) {
+					if (supps.getSelectedIndex() != 0 
+							&& !suppIndex.equals(supps.getSelectedItem())) {
+						suppIndex = supps.getSelectedItem().toString();
+						if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, 
+								"Delete " + supps.getSelectedItem().toString(),
+								"Delete this supplement?", 
+								JOptionPane.OK_CANCEL_OPTION)) {
+							String newR = GUI.webConnect(DELETE_SUPPLEMENT + "&supp=" + suppIndex);
+							if (newR.contains("success")) {
+								JOptionPane.showMessageDialog(
+				        		        myPanel, "Successfully deleted!",
+				        		        "Success", JOptionPane.INFORMATION_MESSAGE);	
+							} else {
+								JOptionPane.showMessageDialog(
+				        		        myPanel, "Deletion Failed!",
+				        		        "Failure", JOptionPane.ERROR_MESSAGE);	
+							}
+						}
+					}
+				}
+				
+			});
+			return supps;		
+		} catch (JSONException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	/**
+	 * Set up the listener for the logout button.
+	 * 
+	 * @param logout the button that the listener is being attached to
+	 */
+	private void addLogoutListener(final JButton logout) {
+		logout.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent theEvent) {
+				setChanged();
+				notifyObservers(GUI.LOGIN);
+				GUI.EMAIL = null;
+				clearChanged();
+			}
+		});
 	}
 	
 	private void addButtonListeners() {
 		ActionListener listener = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				System.out.println("here");
 				index = "";
 				myDays.setSelectedIndex(myDays.getSelectedIndex());
 
@@ -174,39 +314,46 @@ public class AdminPanel extends Observable {
 			            		        "Failure", JOptionPane.ERROR_MESSAGE);	
 								index = "";
 								myDays.setSelectedIndex(myDays.getSelectedIndex());
+							} else {
+								String url = ADD_WORKOUT + "&name=" + wName.getText() + "&ex1=" 
+										+ name1.getText() + "&ex2=" + name2.getText() + "&ex3="
+										+ name3.getText() + "&ex4="  + name4.getText() 
+										+ "&type=weight&day=" + myDays.getSelectedItem();
+								GUI.webConnect(url);
 							}
 						}
 					} else {
 						JPanel panel = new JPanel();
-						JPanel intensityPanel = new JPanel();
-						JPanel durationPanel = new JPanel();
-						JLabel intensity = new JLabel("Intensity: ");
-						JLabel duration = new JLabel("Duration (minutes): "); 
-						
-						JComboBox<String> intensityOptions = new JComboBox<String>();
-						JComboBox<Integer> durationOptions = new JComboBox<Integer>();
+						JPanel descriptionPanel = new JPanel();
+						JPanel namePanel = new JPanel();
+						JLabel nameLabel = new JLabel("Workout name: ");
+						JTextField nameField = new JTextField(10);
+						JTextField descriptionField = new JTextField(100);
+						JLabel description = new JLabel("Please Enter Description: ");
 						
 						panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-						for (int i = 1; i <= 120; i++) {
-							durationOptions.addItem(i);
-						}
-						intensityOptions.addItem("easy");
-						intensityOptions.addItem("medium");
-						intensityOptions.addItem("hard");
-						intensityPanel.add(intensity);
-						intensityPanel.add(intensityOptions);
-						durationPanel.add(duration);
-						durationPanel.add(durationOptions);
-						panel.add(intensityPanel);
-						panel.add(durationPanel);
+						
+						namePanel.add(nameLabel);
+						namePanel.add(nameField);
+						descriptionPanel.add(description);
+						descriptionPanel.add(descriptionField);
+						panel.add(namePanel);
+						panel.add(descriptionPanel);
 						if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(myPanel, panel, 
 								"Set the workout for " + index, 
 								JOptionPane.OK_CANCEL_OPTION)) {
-							JOptionPane.showMessageDialog(
-		            		        myPanel, "All Fields Required!",
-		            		        "Failure", JOptionPane.ERROR_MESSAGE);	
-							index = "";
-							myDays.setSelectedIndex(myDays.getSelectedIndex());
+							if (nameField.getText().equals("") || descriptionField.getText().equals("")) {
+								JOptionPane.showMessageDialog(
+			            		        myPanel, "All Fields Required!",
+			            		        "Failure", JOptionPane.ERROR_MESSAGE);	
+								index = "";
+								myDays.setSelectedIndex(myDays.getSelectedIndex());
+							} else {
+								String url = ADD_WORKOUT + "&name=" + nameField.getText() 
+											+ "&type=cardio&description=" + descriptionField.getText()
+											+ "&day=" + myDays.getSelectedItem();
+								GUI.webConnect(url);
+							}
 						}
 					}
 				}
