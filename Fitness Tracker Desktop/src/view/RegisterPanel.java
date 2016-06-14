@@ -13,6 +13,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
 /**
@@ -44,6 +45,9 @@ public class RegisterPanel extends Observable {
 	/** The current panel. */
 	private final JPanel myPanel;
 	
+	/** password text field. */
+	private final JPasswordField passField;
+	
 	/** Initialize a new RegisterPanel. */
 	public RegisterPanel() {
 		myPanel = new JPanel();
@@ -53,6 +57,7 @@ public class RegisterPanel extends Observable {
 		myGender = new JComboBox<String>();
 		myEmail = new JTextField(30);
 		myDaysWorkout = new JComboBox<Integer>();
+		passField = new JPasswordField(10);
 		fillComboBoxes();
 		setUp();
 	}
@@ -95,6 +100,9 @@ public class RegisterPanel extends Observable {
 		final JPanel genderPanel = new JPanel();
 		final JPanel daysPanel = new JPanel();
 		final JPanel buttonsPanel = new JPanel();
+		final JPanel passPanel = new JPanel();
+		final JLabel passwordLabel = new JLabel("Password");
+		
 		
 		final JLabel weight = new JLabel("Weight: ");
 		final JLabel gender = new JLabel("Gender: ");
@@ -122,6 +130,7 @@ public class RegisterPanel extends Observable {
 		buttonsPanel.add(register);
 		buttonsPanel.add(cancel);
 		
+		passPanel.setBackground(Color.WHITE);
 		buttonsPanel.setBackground(Color.WHITE);
 		weightPanel.setBackground(Color.WHITE);
 		genderPanel.setBackground(Color.WHITE);
@@ -133,10 +142,14 @@ public class RegisterPanel extends Observable {
 		myWeight.setBackground(Color.WHITE);
 		myGender.setBackground(Color.WHITE);
 		myDaysWorkout.setBackground(Color.WHITE);
+		passPanel.add(passwordLabel);
+		passPanel.add(passField);
 		
 		panel.add(firstPanel);
 		panel.add(lastPanel);
 		panel.add(emailPanel);
+		panel.add(passPanel);
+		
 		panel.add(Box.createVerticalStrut(10));
 		panel.add(weightPanel);
 		panel.add(genderPanel);
@@ -166,7 +179,13 @@ public class RegisterPanel extends Observable {
 				
 				String url = GUI.URL;
 				boolean error = true;
-				if (first.length() < 1 || last.length() < 1 || email.length() < 1 ) {
+				String password = passField.getText();
+				if (password.contains(" ")) {
+					error = false;
+					JOptionPane.showMessageDialog(
+            		        myPanel, "Password cannot contain spaces!", "Failure", JOptionPane.ERROR_MESSAGE);
+				}
+				if (first.length() < 1 || last.length() < 1 || email.length() < 1 || password.length() < 1) {
 					JOptionPane.showMessageDialog(
             		        myPanel, "All fields required", "Failure", JOptionPane.ERROR_MESSAGE);
 					error = false;
@@ -179,9 +198,11 @@ public class RegisterPanel extends Observable {
 				if (error) {
 					url += "cmd=register&email=" + email + "&first=" + first.replaceAll(" ", "_") 
 					+ "&last=" + last.replaceAll(" ", "_") 
-							+ "&gender=" + gender + "&days=" + days + "&weight=" + weight;
+							+ "&gender=" + gender + "&days=" + days + "&weight=" + weight
+							+ "&pwd=" + password;
 					String result = GUI.webConnect(url);
 					if (result.contains("success")) {
+						GUI.EMAIL = email;
 						setChanged();
 						notifyObservers(GUI.USER);
 						clearChanged();

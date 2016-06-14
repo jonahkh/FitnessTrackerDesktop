@@ -123,6 +123,8 @@ public class GymUserPanel extends Observable {
 	
 	/** Maps the JButtons for logged workouts to their respective workout numbers. */
 	private Map<JButton, String> loggedWorkouts;
+	
+	private JPanel loggedWorkoutsPanel;
 
 	/** Initialize a new GymUserPanel. */
 	public GymUserPanel() {
@@ -351,6 +353,10 @@ public class GymUserPanel extends Observable {
 					+ "&int=" + intensityOptions.getSelectedItem();
 			GUI.webConnect(url);
 			rateWorkout(cardioName);
+			JButton button = new JButton(cardioName);
+			loggedWorkouts.put(button, (loggedWorkouts.size() + 1) + "");
+			loggedWorkoutsPanel.setPreferredSize(new Dimension(200, loggedWorkouts.size() * 30));
+			addLoggedWorkoutActionListener(button);
 		}
 	}
 	
@@ -418,7 +424,7 @@ public class GymUserPanel extends Observable {
 							JLabel duration = new JLabel("Duration: " + obj.getString("Duration"));
 							p.add(intensity);
 							p.add(duration);
-							JOptionPane.showConfirmDialog(myPanel, pane, 
+							JOptionPane.showMessageDialog(myPanel, pane, 
 									"Workout Information for " + obj.getString("WorkoutName"),
 									JOptionPane.OK_CANCEL_OPTION);
 						} else {
@@ -564,13 +570,20 @@ public class GymUserPanel extends Observable {
 	/** @return the main JPanel for the GymUSerPanel for the user to log workouts. */
 	private JPanel getScrollPanel() {
 		final JPanel innerPanel = new JPanel();
-		JPanel loggedWorkouts = new JPanel();
-		loggedWorkouts.setLayout(new BoxLayout(loggedWorkouts, BoxLayout.Y_AXIS));
-		JScrollPane pane = new JScrollPane(loggedWorkouts);
+		loggedWorkoutsPanel = new JPanel();
+		loggedWorkoutsPanel.setLayout(new BoxLayout(loggedWorkoutsPanel, BoxLayout.Y_AXIS));
+//		loggedWorkoutsPanel.add(new JLabel("Logged Workouts"));
+		addLoggedWorkouts(loggedWorkoutsPanel);
+		JScrollPane pane = new JScrollPane(loggedWorkoutsPanel);
+		pane.setMaximumSize(new Dimension(200, 200));
+		loggedWorkoutsPanel.setPreferredSize(new Dimension(100, loggedWorkouts.size() * 30));
+		pane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		pane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		final JLabel text = new JLabel("<html>To log a workout, press one of the exercise "
 				+ "buttons to add a set.<br>Workouts are only saved if finish is "
 				+ "pressed</html>");
 		final JPanel panel = new JPanel();
+		
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		innerPanel.add(text);
 		innerPanel.setLayout(new BoxLayout(innerPanel, BoxLayout.Y_AXIS));
@@ -591,8 +604,6 @@ public class GymUserPanel extends Observable {
 		innerPanel.add(Box.createVerticalStrut(5));
 		innerPanel.add(exercise4);
 		innerPanel.add(Box.createVerticalStrut(5));
-		loggedWorkouts.add(new JLabel("Logged Workouts"));
-		addLoggedWorkouts(loggedWorkouts);
 		
 		
 		
@@ -625,6 +636,13 @@ public class GymUserPanel extends Observable {
 							set++;
 						}
 					}	
+					JButton button = new JButton(workout.getName());
+					loggedWorkouts.put(button, (loggedWorkouts.size() + 1) + "");
+					loggedWorkoutsPanel.add(button);
+					loggedWorkoutsPanel.setPreferredSize(new Dimension(200, loggedWorkouts.size() * 30));
+					addLoggedWorkoutActionListener(button);
+					myPanel.revalidate();
+					myPanel.repaint();
 					rateWorkout(workout.getName());
 					workout.clearExercises();
 				}
@@ -643,7 +661,8 @@ public class GymUserPanel extends Observable {
 		bottom.add(finish);
 		bottom.add(addCardioWorkout);
 		panel.add(bottom);
-		panel.add(loggedWorkouts);
+		panel.add(new JLabel("Logged Workouts"));
+		panel.add(pane);
 		return panel;
 	}
 	

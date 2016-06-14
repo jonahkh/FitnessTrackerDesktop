@@ -190,7 +190,6 @@ public class AdminPanel extends Observable {
 			final JComboBox<String> supps = new JComboBox<String>();
 			supps.setBackground(Color.WHITE);
 			String result = GUI.webConnect(GET_SUPPLEMENTS);
-			System.out.println(result);
 			JSONArray arr = new JSONArray(result);
 			supps.addItem("Choose to delete");
 			for (int i = 0; i < arr.length(); i++) {

@@ -93,12 +93,14 @@ try {
             $days = isset($_GET['days']) ? $_GET['days'] : '';
 			$first = str_replace('_', ' ', $first);
 			$last = str_replace('_', ' ', $last);
+			$pwd = isset($_GET['pwd']) ? $_GET['pwd'] : '';
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 echo '{"result": "fail", "error": "Please enter a valid email."}';
             }
             $sql = "INSERT INTO Users VALUES ('$email', '$first', '$last', '$weight', '$gender', '$days')";
+            $credentials = "INSERT INTO Credential VALUES ('$email', '$pwd')";
             //attempts to add record
-            if ($db->query($sql)) {
+            if ($db->query($sql) && $db->query($credentials)) {
                 echo '{"result": "success"}';
                 $db = null;
             } else {
